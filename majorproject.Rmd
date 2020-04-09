@@ -1,0 +1,230 @@
+---
+title: "Majorproject"
+author: "Caitlin Sutherland"
+date: "09/04/2020"
+output: html_document
+---
+
+Load the dataset. 
+
+```{r}
+SIAdata=read.csv("SIAData_edit.csv")
+summary(SIAdata)
+install.packages("tidyverse")
+library(tidyverse)
+library(vegan)
+```
+
+The response variables are: SpFPOM, SpCPOM, SpCG, FPOM, CPOM, and CG. 
+
+##PART I: CHECKING FOR NORMALITY
+
+Checking to see if data is normally distributed. Will look at histograms and qqplots to explore the data visually, then run Shapiro-Wilk normality test to confirm any suspicions we may have. 
+
+```{r}
+hist(SIAdata$SpFPOM)
+hist(SIAdata$SpCPOM)
+hist(SIAdata$SpCG)
+hist(SIAdata$FPOM)
+hist(SIAdata$CPOM)
+hist(SIAdata$CG)
+```
+
+Based on the histograms, the most normally distributed variable seems to be SpCG, followed by CG. 
+
+```{r}
+qqnorm(SIAdata$SpFPOM)
+qqline(SIAdata$SpFPOM,col="red",lwd=2)
+
+qqnorm(SIAdata$SpCPOM)
+qqline(SIAdata$SpCPOM,col="red",lwd=2)
+
+qqnorm(SIAdata$SpCG)
+qqline(SIAdata$SpCG,col="red",lwd=2)
+
+qqnorm(SIAdata$FPOM)
+qqline(SIAdata$FPOM,col="red",lwd=2)
+
+qqnorm(SIAdata$CPOM)
+qqline(SIAdata$CPOM,col="red",lwd=2)
+
+qqnorm(SIAdata$CG)
+qqline(SIAdata$CG,col="red",lwd=2)
+```
+
+Based on the QQplots, the only variable with normal distribution is SpCG. 
+
+Will also perform Shapiro-Wilk normality test. The null hypothesis is that the data is normally distributed; if the S-W test p < 0.05, we will reject the null hypothesis and determine that the data is NOT normally distributed. 
+
+```{r}
+shapiro.test(SIAdata$SpFPOM)
+shapiro.test(SIAdata$SpCPOM)
+shapiro.test(SIAdata$SpCG)
+shapiro.test(SIAdata$FPOM)
+shapiro.test(SIAdata$CPOM)
+shapiro.test(SIAdata$CG)
+```
+
+The Shapiro-Wilk normality test confirms that the only normal dataset is that of the response variable SpCG.  
+
+The data will need to be transformed before parametric tests are performed. 
+
+```{r}
+tf.SPFPOM=log2(SIAdata$SpFPOM)
+tf.SPCPOM=log2(SIAdata$SpCPOM)
+tf.SPCG=log2(SIAdata$SpCG)
+tf.FPOM=log2(SIAdata$FPOM)
+tf.CPOM=log2(SIAdata$CPOM)
+tf.CG=log2(SIAdata$CG)
+
+hist(tf.SPFPOM)
+hist(tf.SPCPOM)
+hist(tf.SPCG)
+hist(tf.FPOM)
+hist(tf.CPOM)
+hist(tf.CG)
+
+shapiro.test(tf.SPFPOM)
+shapiro.test(tf.SPCPOM)
+shapiro.test(tf.SPCG)
+shapiro.test(tf.FPOM)
+shapiro.test(tf.CPOM)
+shapiro.test(tf.CG)
+```
+
+
+All response variables with non-normal distribution have been transformed. Will now compile transformed vectors into one dataframe. 
+
+```{r}
+tf.data=data.frame('SiteID'=SIAdata$SiteID,'CropCover'=SIAdata$CropCover,'LivestockDens'=SIAdata$LivestockDens,'WWDens'=SIAdata$WWDens,tf.SPCPOM,tf.SPFPOM,tf.SPCG,tf.FPOM,tf.CPOM,tf.CG)
+
+```
+
+##PART II: Correlation Analysis 
+
+Run the correlation analyses. 
+
+Correlations assume a linear relationship. Should take a look at scatterplots and see how data looks. 
+
+```{r}
+plot(tf.data$CropCover,tf.data$tf.SPCPOM)
+plot(tf.data$CropCover,tf.data$tf.SPFPOM)
+plot(tf.data$CropCover,tf.data$tf.SPCG)
+plot(tf.data$CropCover,tf.data$tf.CPOM)
+plot(tf.data$CropCover,tf.data$tf.FPOM)
+plot(tf.data$CropCover,tf.data$tf.CG)
+plot(tf.data$LivestockDens,tf.data$tf.SPCPOM)
+plot(tf.data$LivestockDens,tf.data$tf.SPFPOM)
+plot(tf.data$LivestockDens,tf.data$tf.SPCG)
+plot(tf.data$LivestockDens,tf.data$tf.CPOM)
+plot(tf.data$LivestockDens,tf.data$tf.FPOM)
+plot(tf.data$LivestockDens,tf.data$tf.CG)
+plot(tf.data$WWDens,tf.data$tf.SPCPOM)
+plot(tf.data$WWDens,tf.data$tf.SPFPOM)
+plot(tf.data$WWDens,tf.data$tf.SPCG)
+plot(tf.data$WWDens,tf.data$tf.CPOM)
+plot(tf.data$WWDens,tf.data$tf.FPOM)
+plot(tf.data$WWDens,tf.data$tf.CG)
+```
+
+i) Crop cover vs δ15N in coarse particulate organic matter, fine particulate organic matter and collector-gatherer benthic macroinvertebrates
+
+```{r}
+cor(tf.data$CropCover,tf.data$tf.SPCPOM,use="complete.obs",method="pearson")
+cor(tf.data$CropCover,tf.data$tf.SPFPOM,use="complete.obs",method="pearson")
+cor(tf.data$CropCover,tf.data$tf.SPCG,use="complete.obs",method="pearson")
+cor(tf.data$CropCover,tf.data$tf.CPOM,use="complete.obs",method="pearson")
+cor(tf.data$CropCover,tf.data$tf.FPOM,use="complete.obs",method="pearson")
+cor(tf.data$CropCover,tf.data$tf.CG,use="complete.obs",method="pearson")
+
+```
+
+i) Livestock density vs δ15N in coarse particulate organic matter, fine particulate organic matter and collector-gatherer benthic macroinvertebrates
+
+```{r}
+cor(tf.data$LivestockDens,tf.data$tf.SPCPOM,use="complete.obs",method="pearson")
+cor(tf.data$LivestockDens,tf.data$tf.SPFPOM,use="complete.obs",method="pearson")
+cor(tf.data$LivestockDens,tf.data$tf.SPCG,use="complete.obs",method="pearson")
+cor(tf.data$LivestockDens,tf.data$tf.CPOM,use="complete.obs",method="pearson")
+cor(tf.data$LivestockDens,tf.data$tf.FPOM,use="complete.obs",method="pearson")
+cor(tf.data$LivestockDens,tf.data$tf.CG,use="complete.obs",method="pearson")
+```
+
+iii) Wastewater release density vs δ15N in coarse particulate organic matter, fine particulate organic matter and collector-gatherer benthic macroinvertebrates
+
+```{r}
+cor(tf.data$WWDens,tf.data$tf.SPCPOM,use="complete.obs",method="pearson")
+cor(tf.data$WWDens,tf.data$tf.SPFPOM,use="complete.obs",method="pearson")
+cor(tf.data$WWDens,tf.data$tf.SPCG,use="complete.obs",method="pearson")
+cor(tf.data$WWDens,tf.data$tf.CPOM,use="complete.obs",method="pearson")
+cor(tf.data$WWDens,tf.data$tf.FPOM,use="complete.obs",method="pearson")
+cor(tf.data$WWDens,tf.data$tf.CG,use="complete.obs",method="pearson")
+```
+
+Need to perform a hypothesis test on the correlation coefficients.
+Null hypothesis: there is no linear relationship between the two variables; ρ = 0.
+Alternative hypothesis: there is a linear relationship between the two variables; ρ ≠ 0.
+
+Go back and run glm function - could have used this to extract correlation coefficient by taking square root of r2 value. Is beneficial to use because it returns a p-value. We can look a this p value of the slope of the regression parameter and determine the significance of the correlation result. 
+
+```{r}
+lm1=glm(tf.data$CropCover~tf.data$tf.SPCPOM)
+summary(lm1)
+lm2=glm(tf.data$CropCover~tf.data$tf.SPFPOM)
+summary(lm2)
+lm3=glm(tf.data$CropCover~tf.data$tf.SPCG)
+summary(lm3)
+lm4=glm(tf.data$CropCover~tf.data$tf.CPOM)
+summary(lm4)
+lm5=glm(tf.data$CropCover~tf.data$tf.FPOM)
+summary(lm5)
+lm6=glm(tf.data$CropCover~tf.data$tf.CG)
+summary(lm6)
+```
+
+```{r}
+lm7=glm(tf.data$LivestockDens~tf.data$tf.SPCPOM)
+summary(lm7)
+lm8=glm(tf.data$LivestockDens~tf.data$tf.SPFPOM)
+summary(lm8)
+lm9=glm(tf.data$LivestockDens~tf.data$tf.SPCG)
+summary(lm9)
+lm10=glm(tf.data$LivestockDens~tf.data$tf.CPOM)
+summary(lm10)
+lm11=glm(tf.data$LivestockDens~tf.data$tf.FPOM)
+summary(lm11)
+lm12=glm(tf.data$LivestockDens~tf.data$tf.CG)
+summary(lm12)
+```
+
+```{r}
+lm13=glm(tf.data$WWDens~tf.data$tf.SPCPOM)
+summary(lm13)
+lm14=glm(tf.data$WWDens~tf.data$tf.SPFPOM)
+summary(lm14)
+lm15=glm(tf.data$WWDens~tf.data$tf.SPCG)
+summary(lm15)
+lm16=glm(tf.data$WWDens~tf.data$tf.CPOM)
+summary(lm16)
+lm17=glm(tf.data$WWDens~tf.data$tf.FPOM)
+summary(lm17)
+lm18=glm(tf.data$WWDens~tf.data$tf.CG)
+summary(lm18)
+```
+
+##PART III: Cluster analysis
+
+Performing a cluster analysis. Need to delete missing data and standardize the variables. 
+
+```{r}
+library(ade4)
+library(vegan)
+library(gclus)
+library(ape)
+
+clean.tf.data=na.omit(tf.data) #listwise deletion of missing data
+rownames(clean.tf.data)=clean.tf.data[,1]
+clean.tf.data=clean.tf.data[,-1]
+cluster=hclust(dist(scale(clean.tf.data)), "ward.D")
+plot(cluster)
+```
